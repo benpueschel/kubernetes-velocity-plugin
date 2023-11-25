@@ -51,12 +51,16 @@ class KubeCloud  {
 
     @Subscribe
     fun onProxyShutdown(@Suppress("UNUSED_PARAMETER") event: ProxyShutdownEvent) {
-        println("Waiting for Service Manager to shut down...")
+        logger.info("Waiting for Service Manager to shut down...")
         this.serviceManager.isRunning = false
+        var threadState: Thread.State? = null
         while(this.serviceManager.isAlive) {
+            if(threadState != this.serviceManager.state) {
+                threadState = this.serviceManager.state
+                logger.trace("Service Manager thread state: $threadState")
+            }
             Thread.sleep(20)
         }
-        println("Service Manager shut down.")
+        logger.info("Service Manager shut down.")
     }
-
 }
