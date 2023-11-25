@@ -3,7 +3,7 @@ plugins {
     id 'java-library'
 }
 
-group 'org.example'
+group 'io.kubecloud'
 version '0.0.1'
 
 
