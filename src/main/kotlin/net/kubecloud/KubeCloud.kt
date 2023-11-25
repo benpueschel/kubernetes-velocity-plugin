@@ -37,7 +37,8 @@ class KubeCloud  {
         val namespace = config.getString("kubernetes.namespace") ?: "minecraft"
 
         this.api = CoreV1Api(ClientBuilder.cluster().build())
-        this.serviceManager = ServiceManager(this.api, ServiceEvent(this.server), this.logger, namespace);
+        val serviceEventHandler = ServiceEvent(this.server, this.logger)
+        this.serviceManager = ServiceManager(this.api, serviceEventHandler, this.logger, namespace);
 
         logger.info("GreyCloud initialized")
     }

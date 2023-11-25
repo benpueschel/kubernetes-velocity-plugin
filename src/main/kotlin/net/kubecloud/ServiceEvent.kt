@@ -3,9 +3,10 @@ package net.kubecloud
 import com.velocitypowered.api.proxy.ProxyServer
 import com.velocitypowered.api.proxy.server.ServerInfo
 import io.kubernetes.client.openapi.models.V1Pod
+import org.slf4j.Logger
 import java.net.InetSocketAddress
 
-class ServiceEvent(private val server: ProxyServer) : ServiceEventInterface {
+class ServiceEvent(private val server: ProxyServer, private val logger: Logger) : ServiceEventInterface {
 
     private val gameServers = HashMap<String, ServerInfo>()
 
@@ -41,13 +42,19 @@ class ServiceEvent(private val server: ProxyServer) : ServiceEventInterface {
             "mc-server" -> {
                 val serverInfo = registerGameServer(pod)
                 if(serverInfo != null)
-                    println("Registered Server ${serverInfo.name} (${serverInfo.address.hostName}:${serverInfo.address.port})")
+                    logger.info(
+                            "Registered Server ${serverInfo.name} " +
+                            "(${serverInfo.address.hostName}:${serverInfo.address.port})"
+                    )
             }
             "lobby-server" -> {
                 val serverInfo = registerGameServer(pod)
                 if(serverInfo != null) {
                     server.configuration.attemptConnectionOrder.add(serverInfo.name)
-                    println("Registered Lobby Server ${serverInfo.name} (${serverInfo.address.hostName}:${serverInfo.address.port})")
+                    logger.info(
+                            "Registered Lobby Server ${serverInfo.name} " +
+                            "(${serverInfo.address.hostName}:${serverInfo.address.port})"
+                    )
                 }
             }
             "proxy-server" -> {
@@ -61,15 +68,19 @@ class ServiceEvent(private val server: ProxyServer) : ServiceEventInterface {
             "mc-server" -> {
                 val serverInfo = unregisterGameServer(pod)
                 if(serverInfo != null)
-                    println("Unregistered Server " +
-                            "${serverInfo.name} (${serverInfo.address.hostName}:${serverInfo.address.port})")
+                    logger.info(
+                            "Unregistered Server ${serverInfo.name} " +
+                            "(${serverInfo.address.hostName}:${serverInfo.address.port})"
+                    )
             }
             "lobby-server" -> {
                 val serverInfo = unregisterGameServer(pod)
                 if(serverInfo != null) {
                     server.configuration.attemptConnectionOrder.remove(serverInfo.name)
-                    println("Unregistered Lobby Server " +
-                                "${serverInfo.name} (${serverInfo.address.hostName}:${serverInfo.address.port})")
+                    logger.info(
+                            "Unregistered Lobby Server ${serverInfo.name} " +
+                            "(${serverInfo.address.hostName}:${serverInfo.address.port})"
+                    )
                 }
             }
             "proxy-server" -> {
