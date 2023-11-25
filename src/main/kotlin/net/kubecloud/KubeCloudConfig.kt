@@ -56,12 +56,12 @@ class KubeCloudConfig(val configPath: Path) {
         return getNode(path).getBoolean(false)
     }
 
-    fun getStringList(path: String): List<String.Companion>? {
-        return getList(path, TypeToken.of(String.javaClass))
+    fun getStringList(path: String): List<String>? {
+        return getList(path, TypeToken.of(String::class.java))
     }
 
     fun <T> getList(path: String, type: TypeToken<T>): List<T>? {
-        return getNode(path).getList(type, null as List<T>)
+        return getNode(path).getList(type, null)
     }
 
     fun get(path: String): Any? {
