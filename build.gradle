@@ -1,0 +1,46 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.8.10'
+    id 'java-library'
+}
+
+group 'org.example'
+version '0.0.1'
+
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
+
+compileKotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
+        freeCompilerArgs.add('-Xjdk-release=11')
+    }
+}
+
+jar {
+    manifest {
+        from 'META-INF/MANIFEST.MF'
+    }
+    from {
+        configurations.runtimeClasspath.findAll { it.name.endsWith('jar') }.collect {
+            zipTree(it).matching {
+                include '**'
+                exclude 'META-INF/'
+            }
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        name = 'papermc'
+        url = 'https://repo.papermc.io/repository/maven-public/'
+    }
+}
+
+dependencies {
+    compileOnly 'com.velocitypowered:velocity-api:3.1.1'
+    annotationProcessor 'com.velocitypowered:velocity-api:3.1.1'
+    implementation 'io.kubernetes:client-java:19.0.0'
+
+}

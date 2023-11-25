@@ -1,0 +1,7 @@
+{
+  "id": "kubecloud",
+  "name": "KubeCloud",
+  "version": "0.0.1",
+  "main": "net.kubecloud.KubeCloud",
+  "dependencies": []
+}
