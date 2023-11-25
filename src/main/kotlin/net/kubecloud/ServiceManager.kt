@@ -7,7 +7,11 @@ import io.kubernetes.client.openapi.models.V1Pod
 import io.kubernetes.client.util.Watch
 import org.slf4j.Logger
 
-class ServiceManager(private val api: CoreV1Api, private val callback: ServiceEventInterface, private val logger: Logger) : Thread() {
+class ServiceManager(
+        private val api: CoreV1Api,
+        private val callback: ServiceEventInterface,
+        private val logger: Logger,
+        private val namespace: String) : Thread() {
 
     private var lastExecution: Long = 0
     private val timeoutSeconds = 5 * 60
@@ -16,7 +20,7 @@ class ServiceManager(private val api: CoreV1Api, private val callback: ServiceEv
     var revalidateServers = false
 
     private fun createWatch(resourceVersion: String?): Watch<V1Pod> {
-        val call = api.listNamespacedPodCall("minecraft",
+        val call = api.listNamespacedPodCall(namespace,
             null, null, null, null, null,
             null, resourceVersion, null, null, timeoutSeconds, true, null)
 

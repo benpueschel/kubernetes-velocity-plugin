@@ -10,8 +10,10 @@ import com.velocitypowered.api.proxy.ProxyServer
 import io.kubernetes.client.openapi.apis.CoreV1Api
 import io.kubernetes.client.util.ClientBuilder
 import org.slf4j.Logger
+import java.io.File
 import java.nio.file.Path
-
+import kotlin.io.path.createDirectory
+import kotlin.io.path.notExists
 
 @Plugin(id = "kubecloud", name = "KubeCloud", version = "0.0.1")
 class KubeCloud  {
@@ -21,16 +23,21 @@ class KubeCloud  {
     private val dataDirectory: Path
     private val api: CoreV1Api
     private val serviceManager: ServiceManager
+    private val config: KubeCloudConfig
 
     @Inject
     constructor(server: ProxyServer, logger: Logger, @DataDirectory dataDirectory: Path) {
         this.server = server
         this.logger = logger
         this.dataDirectory = dataDirectory;
-
+        if(dataDirectory.notExists()) {
+            dataDirectory.createDirectory()
+        }
+        this.config = KubeCloudConfig(File(this.dataDirectory.toFile(), "config.yml").toPath())
+        val namespace = config.getString("kubernetes.namespace") ?: "minecraft"
 
         this.api = CoreV1Api(ClientBuilder.cluster().build())
-        this.serviceManager = ServiceManager(this.api, ServiceEvent(this.server), this.logger);
+        this.serviceManager = ServiceManager(this.api, ServiceEvent(this.server), this.logger, namespace);
 
         logger.info("GreyCloud initialized")
     }

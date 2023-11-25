@@ -15,7 +15,7 @@ fun main() {
 
     val logger = LoggerFactory.getLogger("Main")
 
-    val serviceManager = ServiceManager(api, object: ServiceEventInterface { }, logger)
+    val serviceManager = ServiceManager(api, object: ServiceEventInterface { }, logger, "minecraft")
     serviceManager.isRunning = true
     serviceManager.start()
 
