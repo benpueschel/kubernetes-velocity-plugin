@@ -34,8 +34,7 @@ class ServiceManager(
             logger.info("Creating new watch...")
 
             try {
-                val watch = createWatch(resourceVersion)
-                watch.use { watch ->
+                createWatch(resourceVersion).use { watch ->
                     while (!revalidateServers && System.currentTimeMillis() < lastExecution + timeoutSeconds * 1000) {
                         for (event in watch) {
                             val pod = event.`object`
