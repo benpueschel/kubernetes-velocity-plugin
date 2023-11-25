@@ -2,16 +2,19 @@ package net.kubecloud
 
 import com.google.common.reflect.TypeToken
 import ninja.leaping.configurate.ConfigurationNode
+import ninja.leaping.configurate.commented.CommentedConfigurationNode
 import ninja.leaping.configurate.yaml.YAMLConfigurationLoader
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.yaml.snakeyaml.DumperOptions
+import java.io.IOException
 import java.nio.file.Path
 import kotlin.io.path.createFile
 import kotlin.io.path.notExists
+import kotlin.io.path.pathString
 
+class KubeCloudConfig(configPath: Path, logger: Logger) {
 
-class KubeCloudConfig(val configPath: Path) {
-
-    private val logger = LoggerFactory.getLogger(javaClass)
     private val rootNode: ConfigurationNode
 
     init {
@@ -19,13 +22,44 @@ class KubeCloudConfig(val configPath: Path) {
                 .setPath(configPath)
                 .build()
         if(configPath.notExists()) {
-            configPath.createFile()
-            val defaultRoot = configLoader.load()
-            val kubernetes = defaultRoot.getNode("kubernetes")
-            kubernetes.getNode("namespace").value = "minecraft"
-            configLoader.save(defaultRoot)
+            try {
+                logger.info("config file does not exist. creating file...")
+                configPath.createFile()
+                val defaultRoot = configLoader.load()
+                defaultRoot.getNode("kubernetes").act { kubernetes ->
+                    defaultNodeValue(
+                            kubernetes.getNode("namespace"),
+                            "minecraft",
+                            "The target namespace to watch for pod events"
+                    )
+                    defaultNodeValue(
+                            kubernetes.getNode("timeout"),
+                            "300",
+                            "The timeout in seconds after which a new watch will be created."
+                    )
+
+                    configLoader.save(defaultRoot)
+                }
+            } catch (exception: IOException) {
+                logger.error("could not create default config: ${exception.message}")
+                throw exception
+            }
         }
-        rootNode = configLoader.load()
+         try {
+            logger.info("loading config file.")
+            rootNode = configLoader.load()
+        } catch (exception: IOException) {
+            logger.error("could not load config: ${exception.message}")
+            throw exception
+        }
+    }
+
+    private fun defaultNodeValue(node: ConfigurationNode, value: Any, comment: String?) {
+        node.value = value
+        if(comment == null)
+            return
+
+        (node as CommentedConfigurationNode).setCommentIfAbsent(comment)
     }
 
     private fun getNode(path: String): ConfigurationNode {

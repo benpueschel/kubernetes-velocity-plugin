@@ -11,10 +11,11 @@ class ServiceManager(
         private val api: CoreV1Api,
         private val callback: ServiceEventInterface,
         private val logger: Logger,
-        private val namespace: String) : Thread() {
+        private val config: KubeCloudConfig) : Thread() {
 
     private var lastExecution: Long = 0
-    private val timeoutSeconds = 5 * 60
+    private val timeoutSeconds: Int = config.getInt("kubernetes.timeout")
+    private val namespace: String = config.getString("kubernetes.namespace") ?: "minecraft"
 
     var isRunning = false
     var revalidateServers = false

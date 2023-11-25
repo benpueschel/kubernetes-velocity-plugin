@@ -30,15 +30,15 @@ class KubeCloud  {
         this.server = server
         this.logger = logger
         this.dataDirectory = dataDirectory;
-        if(dataDirectory.notExists()) {
+        if(dataDirectory.notExists())
             dataDirectory.createDirectory()
-        }
-        this.config = KubeCloudConfig(File(this.dataDirectory.toFile(), "config.yml").toPath())
-        val namespace = config.getString("kubernetes.namespace") ?: "minecraft"
+
+        val configPath = File(this.dataDirectory.toFile(), "config.yml").toPath()
+        this.config = KubeCloudConfig(configPath, this.logger)
 
         this.api = CoreV1Api(ClientBuilder.cluster().build())
         val serviceEventHandler = ServiceEvent(this.server, this.logger)
-        this.serviceManager = ServiceManager(this.api, serviceEventHandler, this.logger, namespace);
+        this.serviceManager = ServiceManager(this.api, serviceEventHandler, this.logger, this.config);
 
         logger.info("GreyCloud initialized")
     }
