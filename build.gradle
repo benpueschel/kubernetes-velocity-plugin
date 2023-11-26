@@ -19,20 +19,6 @@ compileKotlin {
     }
 }
 
-jar {
-    manifest {
-        from 'META-INF/MANIFEST.MF'
-    }
-    from {
-        configurations.runtimeClasspath.findAll { it.name.endsWith('jar') }.collect {
-            zipTree(it).matching {
-                include '**'
-                exclude 'META-INF/'
-            }
-        }
-    }
-}
-
 repositories {
     mavenCentral()
     maven {
