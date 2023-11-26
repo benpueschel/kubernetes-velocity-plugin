@@ -12,7 +12,7 @@ First, initialize gradle:
 ```
 Then build your project using gradle:
 ```sh
-gradle build
+./gradlew build
 ```
 The compiled jar will be located at `build/libs/`
 
