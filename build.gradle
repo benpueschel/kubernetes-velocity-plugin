@@ -1,21 +1,29 @@
 plugins {
-    id 'org.jetbrains.kotlin.jvm' version '1.8.10'
+    id 'org.jetbrains.kotlin.jvm' version '2.2.21'
     id 'java-library'
+	id 'application'
 }
 
 group 'io.kubecloud'
 version '0.0.1'
 
+jar {
+    from {
+		configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+	exclude 'META-INF/**'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 
 compileKotlin {
     compilerOptions {
-        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
-        freeCompilerArgs.add('-Xjdk-release=11')
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21
+        freeCompilerArgs.add('-Xjdk-release=21')
     }
 }
 
@@ -30,6 +38,6 @@ repositories {
 dependencies {
     compileOnly 'com.velocitypowered:velocity-api:3.1.1'
     annotationProcessor 'com.velocitypowered:velocity-api:3.1.1'
-    implementation 'io.kubernetes:client-java:19.0.0'
+    implementation 'io.kubernetes:client-java:24.0.0'
 
 }

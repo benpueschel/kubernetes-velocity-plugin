@@ -8,110 +8,123 @@ import java.net.InetSocketAddress
 
 class ServiceEvent(private val server: ProxyServer, private val logger: Logger) : ServiceEventInterface {
 
-    private val gameServers = HashMap<String, ServerInfo>()
+	private val gameServers = HashMap<String, ServerInfo>()
 
-    private fun registerGameServer(pod: V1Pod): ServerInfo? {
-        val metadata = pod.metadata
-        if (metadata?.name == null)
-            return null
+	private fun registerGameServer(pod: V1Pod): ServerInfo? {
+		val metadata = pod.metadata
+		if (metadata?.name == null)
+			return null
 
-        if(pod.status?.podIP == null)
-            return null
+		if (pod.status?.podIP == null)
+			return null
 
-        val serverInfo = ServerInfo(metadata.name, InetSocketAddress(pod.status?.podIP, 25565))
-        if(gameServers[metadata.name!!] == serverInfo)
-            return serverInfo // return if server is already registered under the same ip
+		val serverInfo = ServerInfo(metadata.name, InetSocketAddress(pod.status?.podIP, 25565))
+		if (gameServers[metadata.name!!] == serverInfo)
+			return serverInfo // return if server is already registered under the same ip
 
-        gameServers[metadata.name!!] = serverInfo
-        server.registerServer(serverInfo)
-        return serverInfo
-    }
+		gameServers[metadata.name!!] = serverInfo
+		server.registerServer(serverInfo)
+		return serverInfo
+	}
 
-    private fun unregisterGameServer(pod: V1Pod): ServerInfo? {
-        val metadata = pod.metadata
-        if (metadata?.name == null)
-            return null
-        val serverInfo = gameServers[metadata.name!!]
-        server.unregisterServer(serverInfo)
-        gameServers.remove(metadata.name!!)
-        return serverInfo
-    }
+	private fun unregisterGameServer(pod: V1Pod): ServerInfo? {
+		val metadata = pod.metadata
+		if (metadata?.name == null)
+			return null
+		val serverInfo = gameServers[metadata.name!!] ?: return null
 
-    private fun registerServer(pod: V1Pod) {
-        when (pod.metadata?.labels?.get("kind")) {
-            "mc-server" -> {
-                val serverInfo = registerGameServer(pod)
-                if(serverInfo != null)
-                    logger.info(
-                            "Registered Server ${serverInfo.name} " +
-                            "(${serverInfo.address.hostName}:${serverInfo.address.port})"
-                    )
-            }
-            "lobby-server" -> {
-                val serverInfo = registerGameServer(pod)
-                if(serverInfo != null) {
-                    server.configuration.attemptConnectionOrder.add(serverInfo.name)
-                    logger.info(
-                            "Registered Lobby Server ${serverInfo.name} " +
-                            "(${serverInfo.address.hostName}:${serverInfo.address.port})"
-                    )
-                }
-            }
-            "proxy-server" -> {
-                // TODO: sync up proxies, establish direct socket connection
-            }
-        }
-    }
+		server.unregisterServer(serverInfo)
+		server.configuration.attemptConnectionOrder.remove(serverInfo.name)
+		gameServers.remove(metadata.name!!)
+		return serverInfo
+	}
 
-    private fun unregisterServer(pod: V1Pod) {
-        when (pod.metadata?.labels?.get("kind")) {
-            "mc-server" -> {
-                val serverInfo = unregisterGameServer(pod)
-                if(serverInfo != null)
-                    logger.info(
-                            "Unregistered Server ${serverInfo.name} " +
-                            "(${serverInfo.address.hostName}:${serverInfo.address.port})"
-                    )
-            }
-            "lobby-server" -> {
-                val serverInfo = unregisterGameServer(pod)
-                if(serverInfo != null) {
-                    server.configuration.attemptConnectionOrder.remove(serverInfo.name)
-                    logger.info(
-                            "Unregistered Lobby Server ${serverInfo.name} " +
-                            "(${serverInfo.address.hostName}:${serverInfo.address.port})"
-                    )
-                }
-            }
-            "proxy-server" -> {
-            }
-        }
-    }
+	private fun registerServer(pod: V1Pod) {
+		when (pod.metadata?.labels?.get("kind")) {
+			"mc-server" -> {
+				val serverInfo = registerGameServer(pod)
+				if (serverInfo != null)
+					logger.info(
+						"Registered Server ${serverInfo.name} " +
+								"(${serverInfo.address.hostName}:${serverInfo.address.port})"
+					)
+			}
 
-    override fun podCreated(pod: V1Pod) {
-        registerServer(pod)
-    }
+			"lobby-server" -> {
+				val serverInfo = registerGameServer(pod)
+				if (serverInfo != null) {
+					server.configuration.attemptConnectionOrder.add(serverInfo.name)
+					logger.info(
+						"Registered Lobby Server ${serverInfo.name} " +
+								"(${serverInfo.address.hostName}:${serverInfo.address.port})"
+					)
+					logger.info(
+						"Updated lobby connection order: " +
+								server.configuration.attemptConnectionOrder.joinToString(", ")
+					)
+				}
+			}
 
-    override fun podDeleted(pod: V1Pod) {
-        unregisterServer(pod)
-    }
+			"proxy-server" -> {
+				// TODO: sync up proxies, establish direct socket connection
+			}
+		}
+	}
 
-    override fun podModified(pod: V1Pod) {
+	private fun unregisterServer(pod: V1Pod) {
+		when (pod.metadata?.labels?.get("kind")) {
+			"mc-server" -> {
+				val serverInfo = unregisterGameServer(pod)
+				if (serverInfo != null)
+					logger.info(
+						"Unregistered Server ${serverInfo.name} " +
+								"(${serverInfo.address.hostName}:${serverInfo.address.port})"
+					)
+			}
 
-        when (pod.status?.phase) {
-            "Pending" -> {
-            }
-            "Running" -> {
-                registerServer(pod)
-            }
-            "Succeeded" -> {
-                unregisterServer(pod)
-            }
-            "Failed" -> {
-                unregisterServer(pod)
-            }
-        }
+			"lobby-server" -> {
+				val serverInfo = unregisterGameServer(pod)
+				if (serverInfo != null) {
+					server.configuration.attemptConnectionOrder.remove(serverInfo.name)
+					logger.info(
+						"Unregistered Lobby Server ${serverInfo.name} " +
+								"(${serverInfo.address.hostName}:${serverInfo.address.port})"
+					)
+				}
+			}
 
-    }
+			"proxy-server" -> {
+			}
+		}
+	}
+
+	override fun podCreated(pod: V1Pod) {
+		registerServer(pod)
+	}
+
+	override fun podDeleted(pod: V1Pod) {
+		unregisterServer(pod)
+	}
+
+	override fun podModified(pod: V1Pod) {
+
+		when (pod.status?.phase) {
+			"Pending" -> {
+			}
+
+			"Running" -> {
+				registerServer(pod)
+			}
+
+			"Succeeded" -> {
+				unregisterServer(pod)
+			}
+
+			"Failed" -> {
+				unregisterServer(pod)
+			}
+		}
+
+	}
 
 }
